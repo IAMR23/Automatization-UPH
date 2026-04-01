@@ -1,0 +1,7 @@
+# Carpetas
+pdf/
+env/
+
+# Archivos Excel
+*.xlsx
+*.xls
