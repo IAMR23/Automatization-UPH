@@ -1,7 +1,7 @@
 import pandas as pd
 
 # -------- CONFIGURACIÓN --------
-ARCHIVO_ENTRADA = "Contifico.xlsx"
+ARCHIVO_ENTRADA = "Documentos.xls"
 ARCHIVO_SALIDA = "contifico_limpio.xlsx"
 
 # Columnas que necesitamos
@@ -14,8 +14,8 @@ COLUMNAS = [
     "Total"
 ]
 
-# -------- LEER EXCEL --------
-df = pd.read_excel(ARCHIVO_ENTRADA)
+# -------- LEER EXCEL (.xls) Y SALTAR 3 FILAS --------
+df = pd.read_excel(ARCHIVO_ENTRADA, skiprows=3)
 
 # -------- FILTROS --------
 df = df[
