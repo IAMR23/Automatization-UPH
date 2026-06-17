@@ -1,7 +1,12 @@
 # Carpetas
 pdf/
 env/
+build/
+dist/
 
 # Archivos Excel
 *.xlsx
 *.xls
+
+# PyInstaller
+*.spec

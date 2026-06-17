@@ -22,6 +22,20 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Crear ejecutable
+
+```powershell
+.\build_exe.ps1
+```
+
+El ejecutable queda en:
+
+```text
+dist\GeneradorReportes.exe
+```
+
+Ese archivo puede copiarse a otra computadora Windows sin instalar Python.
+
 Tambien puedes seguir ejecutando los scripts individuales:
 
 ```powershell

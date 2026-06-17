@@ -12,7 +12,7 @@ from limpiarContifico import limpiar_contifico
 from pdf import generar_excel_desde_pdfs
 
 
-APP_TITLE = "Generador de Reportes PDF a Excel"
+APP_TITLE = "Revision de UPH vs Contifico"
 
 COLORS = {
     "window": "#1f1f1f",
