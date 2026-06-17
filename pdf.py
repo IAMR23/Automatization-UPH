@@ -1,105 +1,89 @@
-import pdfplumber
-import pandas as pd
 import os
 import re
 from glob import glob
 
-# Carpeta donde están los PDFs
-PDF_FOLDER = "pdf"  # cambia si tu carpeta tiene otro nombre
-OUTPUT_FILE = "uphone.xlsx"
+import pandas as pd
+import pdfplumber
 
-all_dataframes = []
+
+PDF_FOLDER = "pdf"
+OUTPUT_FILE = "uphone.xlsx"
 
 
 def clean_cell(text):
-    """
-    Limpia saltos de línea y espacios extras dentro de una celda
-    """
     if text is None:
         return text
 
-    # Reemplazar saltos de línea por espacio
-    text = re.sub(r'[\n\r]+', ' ', str(text))
-
-    # Eliminar espacios duplicados
-    text = re.sub(r'\s+', ' ', text).strip()
-
+    text = re.sub(r"[\n\r]+", " ", str(text))
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
 def clean_dataframe(df):
-    """
-    Limpia el dataframe eliminando filas innecesarias
-    y normalizando texto
-    """
-
-    # Limpiar cada celda
     df = df.apply(lambda col: col.map(clean_cell))
-
-    # Eliminar filas que contengan "TOTALES GENERALES"
     df = df[
         ~df.apply(
             lambda row: row.astype(str).str.contains(
                 "TOTALES GENERALES", case=False
             ).any(),
-            axis=1
+            axis=1,
         )
     ]
-
-    # Eliminar filas completamente vacías
-    df = df.dropna(how="all")
-
-    return df
+    return df.dropna(how="all")
 
 
 def extract_tables_from_pdf(pdf_path):
-    """
-    Extrae todas las tablas de un PDF
-    """
     dataframes = []
 
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
-
             tables = page.extract_tables()
 
             for table in tables:
-
                 if not table or len(table) < 2:
                     continue
 
-                # Primera fila como encabezado
                 df = pd.DataFrame(table[1:], columns=table[0])
-
                 df = clean_dataframe(df)
-
-                # Agregar columna con nombre del archivo
                 df["archivo_origen"] = os.path.basename(pdf_path)
-
                 dataframes.append(df)
 
     return dataframes
 
 
-# Buscar todos los PDFs en la carpeta
-pdf_files = glob(os.path.join(PDF_FOLDER, "*.pdf"))
+def generar_excel_desde_pdfs(pdf_files=None, output_file=OUTPUT_FILE, log_callback=None):
+    all_dataframes = []
+    archivos_no_leidos = []
 
-for pdf_file in pdf_files:
-    print(f"Procesando: {pdf_file}")
+    if pdf_files is None:
+        pdf_files = glob(os.path.join(PDF_FOLDER, "*.pdf"))
 
-    dfs = extract_tables_from_pdf(pdf_file)
+    for pdf_file in pdf_files:
+        try:
+            if log_callback:
+                log_callback(f"Procesando PDF: {pdf_file}")
 
-    all_dataframes.extend(dfs)
+            all_dataframes.extend(extract_tables_from_pdf(pdf_file))
+        except Exception as exc:
+            archivos_no_leidos.append({"archivo": pdf_file, "error": str(exc)})
+            if log_callback:
+                log_callback(f"No se pudo leer {pdf_file}: {exc}")
 
+    if not all_dataframes:
+        raise ValueError("No se encontraron tablas en los PDFs seleccionados.")
 
-if not all_dataframes:
-    print("No se encontraron tablas.")
-else:
-
-    # Unir todos los dataframes
     final_df = pd.concat(all_dataframes, ignore_index=True, sort=False)
+    final_df.to_excel(output_file, index=False)
 
-    # Exportar a Excel
-    final_df.to_excel(OUTPUT_FILE, index=False)
+    return {
+        "output_file": output_file,
+        "pdfs": len(pdf_files),
+        "registros": len(final_df),
+        "no_leidos": len(archivos_no_leidos),
+        "archivos_no_leidos": archivos_no_leidos,
+    }
 
-    print(f"Archivo generado correctamente: {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    resultado = generar_excel_desde_pdfs()
+    print(f"Archivo generado correctamente: {resultado['output_file']}")
